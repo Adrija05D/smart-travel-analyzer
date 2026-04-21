@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Travel, Weather &amp; Pollution Analyzer</title>
+  <meta name="description" content="Analyze real-time weather, air quality, and travel safety for any city worldwide." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ░░ SHARED BACKGROUND ░░ -->
+  <div class="bg-mesh" aria-hidden="true">
+    <div class="mesh-orb orb-1"></div>
+    <div class="mesh-orb orb-2"></div>
+    <div class="mesh-orb orb-3"></div>
+    <div class="mesh-orb orb-4"></div>
+    <div class="scanlines"></div>
+    <div class="grid-lines"></div>
+  </div>
+
+  <!-- ░░ PAGE TRANSITION CURTAIN ░░ -->
+  <div class="page-curtain" id="pageCurtain" aria-hidden="true"></div>
+
+  <!-- ══════════════════════════════════════════════════════
+       PAGE 1 — HOME (Search + Welcome)
+       ══════════════════════════════════════════════════════ -->
+  <div class="page" id="pageHome">
+    <div class="page-scroll">
+
+      <header class="site-header">
+        <div class="header-badge">
+          <span class="badge-dot"></span>
+          Live · 3 API Engine · Real-time Data
+        </div>
+        <h1 class="site-title">
+          Smart Travel,
+          <span class="title-accent">Weather &amp; Pollution</span>
+          Analyzer
+        </h1>
+        <p class="site-subtitle">
+          Search any city in the world — get live weather, air quality, 5-day forecast,
+          and an intelligent travel safety verdict.
+        </p>
+        <div class="unit-toggle" role="group" aria-label="Temperature unit">
+          <button id="btnCelsius"    class="unit-btn active" aria-pressed="true">°C</button>
+          <button id="btnFahrenheit" class="unit-btn"        aria-pressed="false">°F</button>
+        </div>
+      </header>
+
+      <section class="search-section" aria-label="City Search">
+        <form class="search-form" id="searchForm" autocomplete="off" novalidate>
+          <div class="search-input-wrapper">
+            <span class="search-icon" aria-hidden="true">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+            </span>
+            <input id="cityInput" type="text" name="city" class="search-input"
+              placeholder="Search city — Tokyo, Paris, Mumbai, New York…"
+              aria-label="City name" autocomplete="off" required />
+            <span class="search-shortcut" aria-hidden="true">↵</span>
+          </div>
+          <button type="button" id="geoBtn" class="geo-btn" title="Use my location">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+              <circle cx="12" cy="12" r="8" stroke-dasharray="3 3"/>
+            </svg>
+          </button>
+          <button type="submit" id="searchBtn" class="search-btn">
+            <span class="btn-icon">✈</span><span class="btn-text">Analyze</span>
+            <span class="btn-glow"></span>
+          </button>
+        </form>
+
+        <div class="recent-searches" id="recentSearches">
+          <span class="recent-label">Recent:</span>
+          <div class="recent-chips" id="recentChips"></div>
+          <button class="recent-clear" id="clearRecent">✕ Clear</button>
+        </div>
+      </section>
+
+      <!-- Welcome State -->
+      <section class="welcome-state" id="welcomeState">
+        <div class="welcome-glow" aria-hidden="true"></div>
+        <p class="welcome-eyebrow">⚡ Three APIs. One Verdict.</p>
+        <h2 class="welcome-heading">Know Before You Go.</h2>
+        <p class="welcome-body">
+          Search any city and get a real-time travel safety assessment combining live weather,
+          air pollution readings, and country intelligence — all in seconds.
+        </p>
+        <div class="api-cards">
+          <div class="api-card ripple-host">
+            <div class="api-card-icon">🌦</div>
+            <div class="api-card-name">OpenWeatherMap</div>
+            <div class="api-card-desc">Temperature, humidity, wind, pressure, visibility &amp; 5-day forecast</div>
+          </div>
+          <div class="api-card ripple-host">
+            <div class="api-card-icon">🫁</div>
+            <div class="api-card-name">OpenAQ v3</div>
+            <div class="api-card-desc">Live air quality: PM₂.₅, PM₁₀, NO₂, O₃ and computed AQI score</div>
+          </div>
+          <div class="api-card ripple-host">
+            <div class="api-card-icon">🌍</div>
+            <div class="api-card-name">REST Countries</div>
+            <div class="api-card-desc">Country capital, population, currency, language &amp; flag</div>
+          </div>
+        </div>
+        <div class="welcome-hint">
+          <span class="welcome-hint-arrow">↑</span>
+          Type a city or tap the location icon to begin
+        </div>
+      </section>
+
+    </div><!-- /page-scroll -->
+  </div><!-- /#pageHome -->
+
+
+  <!-- ══════════════════════════════════════════════════════
+       PAGE 2 — RESULTS
+       ══════════════════════════════════════════════════════ -->
+  <div class="page" id="pageResults">
+
+    <!-- Sticky top bar -->
+    <div class="results-topbar">
+      <button class="topbar-back ripple-host" id="backBtn" aria-label="Back to search">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <path d="M19 12H5M12 5l-7 7 7 7"/>
+        </svg>
+        <span>Back</span>
+      </button>
+      <div class="topbar-city" id="topbarCity">—</div>
+      <button class="topbar-new ripple-host" id="newSearchBtn" aria-label="New search">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        New Search
+      </button>
+    </div>
+
+    <!-- Scrollable area -->
+    <div class="results-scroll">
+
+      <!-- Loading -->
+      <div id="loadingSpinner" class="loader" role="status" aria-live="polite">
+        <div class="loader-rings">
+          <div class="ring ring-1"></div>
+          <div class="ring ring-2"></div>
+          <div class="ring ring-3"></div>
+        </div>
+        <p class="loader-label" id="loaderLabel">Fetching live data…</p>
+        <div class="loader-steps">
+          <span class="step" id="step1">🌦 Weather</span>
+          <span class="step-sep">→</span>
+          <span class="step" id="step2">🫁 Air Quality</span>
+          <span class="step-sep">→</span>
+          <span class="step" id="step3">🌍 Country</span>
+          <span class="step-sep">→</span>
+          <span class="step" id="step4">📅 Forecast</span>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div id="errorBox" class="error-box" role="alert">
+        <div class="error-inner">
+          <span class="error-icon">⚡</span>
+          <div>
+            <div class="error-title">Something went wrong</div>
+            <span id="errorMsg">Please try again.</span>
+          </div>
+        </div>
+        <button class="error-retry" id="errorRetry">Try Again</button>
+      </div>
+
+      <!-- Results -->
+      <main id="results" class="results" aria-live="polite">
+
+        <!-- ROW 1 -->
+        <div class="grid-row row-top">
+          <article class="card card-city ripple-host" style="--delay:.05s">
+            <div class="card-tag">📍 Location</div>
+            <div class="city-main">
+              <h2 class="city-name" id="cityName">—</h2>
+              <code class="city-coords" id="cityCoord">—</code>
+            </div>
+            <div class="city-meta-row">
+              <div class="city-time-pill">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
+                <span id="cityTimeText">—</span>
+              </div>
+              <div class="sun-times">
+                <span>🌅 <span id="sunriseVal">—</span></span>
+                <span>🌇 <span id="sunsetVal">—</span></span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card card-country ripple-host" style="--delay:.10s">
+            <div class="card-tag">🏳 Country</div>
+            <div class="country-top">
+              <div class="country-flag" id="countryFlag">🌐</div>
+              <div>
+                <div class="country-name"   id="countryName">—</div>
+                <div class="country-region" id="countryRegion">—</div>
+              </div>
+            </div>
+            <div class="country-stats">
+              <div class="cstat"><span class="cstat-label">Capital</span>    <span class="cstat-val" id="countryCapital">—</span></div>
+              <div class="cstat"><span class="cstat-label">Population</span> <span class="cstat-val" id="countryPop">—</span></div>
+              <div class="cstat"><span class="cstat-label">Currency</span>   <span class="cstat-val" id="countryCurr">—</span></div>
+              <div class="cstat"><span class="cstat-label">Language</span>   <span class="cstat-val" id="countryLang">—</span></div>
+            </div>
+          </article>
+        </div>
+
+        <!-- ROW 2 -->
+        <div class="grid-row row-weather">
+          <article class="card card-stat card-temp ripple-host" style="--delay:.15s">
+            <div class="card-tag">🌡 Temperature</div>
+            <div class="weather-icon-lg" id="weatherIcon">🌡️</div>
+            <div class="stat-block">
+              <span class="stat-num"  id="tempVal">—</span>
+              <span class="stat-unit" id="tempUnit">°C</span>
+            </div>
+            <div class="stat-sub"  id="feelsLike">Feels like —</div>
+            <div class="temp-range">
+              <span class="range-low"  id="tempMin">↓ —</span>
+              <span class="range-high" id="tempMax">↑ —</span>
+            </div>
+            <div class="stat-badge" id="weatherCondition">—</div>
+          </article>
+
+          <article class="card card-stat card-humid ripple-host" style="--delay:.20s">
+            <div class="card-tag">💧 Humidity</div>
+            <div class="weather-icon-lg">💧</div>
+            <div class="stat-block">
+              <span class="stat-num"  id="humidVal">—</span>
+              <span class="stat-unit">%</span>
+            </div>
+            <div class="stat-sub" id="humidDesc">—</div>
+            <div class="stat-sub" id="visibilityVal">Visibility: —</div>
+            <div class="cloud-row">
+              <span class="cloud-icon">☁️</span>
+              <span id="cloudVal">Clouds: —%</span>
+            </div>
+          </article>
+
+          <article class="card card-stat card-wind ripple-host" style="--delay:.25s">
+            <div class="card-tag">💨 Wind &amp; Pressure</div>
+            <div class="weather-icon-lg">💨</div>
+            <div class="stat-block">
+              <span class="stat-num"  id="windVal">—</span>
+              <span class="stat-unit"> m/s</span>
+            </div>
+            <div class="stat-sub" id="windDir">Direction: —</div>
+            <div class="stat-sub" id="pressureVal">Pressure: — hPa</div>
+            <div class="stat-sub" id="dewPointVal">Dew Point: —</div>
+          </article>
+        </div>
+
+        <!-- ROW 3 -->
+        <div class="grid-row row-aqi">
+          <article class="card card-aqi ripple-host" style="--delay:.30s">
+            <div class="card-tag">🫁 Air Quality Index</div>
+            <div class="aqi-layout">
+              <div class="aqi-gauge">
+                <svg class="gauge-svg" viewBox="0 0 120 120" aria-hidden="true">
+                  <circle class="gauge-track" cx="60" cy="60" r="50"/>
+                  <circle class="gauge-fill" id="gaugeFill" cx="60" cy="60" r="50"
+                    stroke-dasharray="314" stroke-dashoffset="314"/>
+                </svg>
+                <div class="gauge-center">
+                  <span class="gauge-num" id="aqiNum">—</span>
+                  <span class="gauge-lbl">AQI</span>
+                </div>
+              </div>
+              <div class="aqi-info">
+                <div class="aqi-status" id="aqiStatus">—</div>
+                <div class="aqi-desc"   id="aqiDesc">Waiting…</div>
+                <div class="aqi-scale">
+                  <div class="scale-bar">
+                    <div class="scale-fill" id="aqiScaleFill" style="width:100%"></div>
+                  </div>
+                  <div class="scale-labels">
+                    <span>Good</span><span>Moderate</span><span>Hazardous</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="card card-pollutants ripple-host" style="--delay:.35s">
+            <div class="card-tag">🧪 Pollutant Breakdown</div>
+            <div class="pollutants-grid">
+              <div class="pollutant ripple-host">
+                <div class="pol-header"><span class="pol-label">PM<sub>2.5</sub></span><span class="pol-badge" id="pm25Badge">—</span></div>
+                <div class="pol-value" id="pm25Val">—</div>
+                <div class="pol-unit">μg/m³</div>
+                <div class="pol-meter"><div class="pol-meter-track"><div class="pol-meter-fill" id="pm25Bar"></div></div><span class="pol-meter-max">150</span></div>
+              </div>
+              <div class="pollutant ripple-host">
+                <div class="pol-header"><span class="pol-label">PM<sub>10</sub></span><span class="pol-badge" id="pm10Badge">—</span></div>
+                <div class="pol-value" id="pm10Val">—</div>
+                <div class="pol-unit">μg/m³</div>
+                <div class="pol-meter"><div class="pol-meter-track"><div class="pol-meter-fill" id="pm10Bar"></div></div><span class="pol-meter-max">250</span></div>
+              </div>
+              <div class="pollutant ripple-host">
+                <div class="pol-header"><span class="pol-label">NO<sub>2</sub></span><span class="pol-badge" id="no2Badge">—</span></div>
+                <div class="pol-value" id="no2Val">—</div>
+                <div class="pol-unit">μg/m³</div>
+                <div class="pol-meter"><div class="pol-meter-track"><div class="pol-meter-fill" id="no2Bar"></div></div><span class="pol-meter-max">200</span></div>
+              </div>
+              <div class="pollutant ripple-host">
+                <div class="pol-header"><span class="pol-label">O<sub>3</sub></span><span class="pol-badge" id="o3Badge">—</span></div>
+                <div class="pol-value" id="o3Val">—</div>
+                <div class="pol-unit">μg/m³</div>
+                <div class="pol-meter"><div class="pol-meter-track"><div class="pol-meter-fill" id="o3Bar"></div></div><span class="pol-meter-max">180</span></div>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- ROW 4: Forecast -->
+        <article class="card card-forecast ripple-host" style="--delay:.40s">
+          <div class="card-tag">📅 5-Day Forecast</div>
+          <div class="forecast-strip" id="forecastStrip"></div>
+        </article>
+
+        <!-- ROW 5: Verdict -->
+        <article class="card card-verdict ripple-host" id="verdictCard" style="--delay:.46s">
+          <div class="verdict-bg-glow" id="verdictGlow" aria-hidden="true"></div>
+          <div class="verdict-scanline" aria-hidden="true"></div>
+          <div class="card-tag">🧭 Smart Travel Verdict</div>
+          <div class="verdict-top">
+            <div class="verdict-emoji" id="verdictEmoji">🌐</div>
+            <div class="verdict-title-block">
+              <div class="verdict-pill" id="verdictPill">ANALYZING…</div>
+              <h3 class="verdict-heading" id="verdictHeading">Calculating verdict…</h3>
+            </div>
+            <div class="verdict-actions">
+              <button class="share-btn ripple-host" id="shareBtn" title="Share">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+                <span id="shareLabel">Share</span>
+              </button>
+              <button class="copy-btn ripple-host" id="copyBtn" title="Copy details">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                <span id="copyLabel">Copy</span>
+              </button>
+            </div>
+          </div>
+          <div class="verdict-content">
+            <div class="verdict-col">
+              <h4 class="verdict-col-title">📋 Situation Summary</h4>
+              <p class="verdict-summary" id="verdictSummary">Awaiting data…</p>
+            </div>
+            <div class="verdict-col">
+              <h4 class="verdict-col-title">💡 Health Recommendations</h4>
+              <ul class="rec-list" id="recList"></ul>
+            </div>
+          </div>
+          <div class="season-tip">
+            <span class="season-tip-icon">📌</span>
+            <span id="seasonTipText">—</span>
+          </div>
+        </article>
+
+        <!-- Footer inside results -->
+        <footer class="site-footer">
+          <p>Powered by
+            <a href="https://openweathermap.org" target="_blank" rel="noopener">OpenWeatherMap</a> ·
+            <a href="https://openaq.org"         target="_blank" rel="noopener">OpenAQ v3</a> ·
+            <a href="https://restcountries.com"  target="_blank" rel="noopener">REST Countries</a>
+          </p>
+          <p class="footer-sub">All data is real-time and indicative only · Smart Travel Analyzer © 2026</p>
+        </footer>
+
+      </main>
+    </div><!-- /results-scroll -->
+  </div><!-- /#pageResults -->
+
+  <script src="script.js"></script>
+</body>
+</html>
