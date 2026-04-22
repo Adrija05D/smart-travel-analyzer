@@ -556,26 +556,58 @@ async function analyzeCity(query) {
   showLoading(true);   // ← navigates to results page immediately
 
   try {
+    let lat, lon, cityName, countryCode;
+
+    // (1) Reverse Geocode (if query is coords)
+    if (typeof query === 'object' && query.lat != null && query.lon != null) {
+      lat = query.lat;
+      lon = query.lon;
+      if (query.name) {
+        cityName = query.name;
+        if (query.country) countryCode = query.country;
+      } else {
+        try {
+          const geoRes = await fetchJSON(`https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${CONFIG.OWM_KEY}`);
+          if (geoRes && geoRes.length > 0) {
+            cityName = geoRes[0].name;
+            countryCode = geoRes[0].country;
+          }
+        } catch (err) {
+          console.error('Reverse Geocode Error:', err);
+        }
+      }
+    }
+
+    // (2) Fetch Weather
     setStep(1);
     let weather;
-    try { weather=await fetchWeather(query); }
-    catch {
-      const lbl=typeof query==='string'?`"${query}"`:'your location';
+    try { 
+      weather = await fetchWeather(typeof query === 'string' ? query : {lat, lon}); 
+    } catch {
+      const lbl = typeof query === 'string' ? `"${query}"` : 'your location';
       throw new Error(`City ${lbl} not found. Check the spelling or your connection.`);
     }
-    if(weather.cod&&weather.cod!==200) throw new Error(weather.message??'City not found.');
+    if (weather.cod && weather.cod !== 200) throw new Error(weather.message ?? 'City not found.');
 
-    const {lat,lon}=weather.coord;
+    lat = weather.coord.lat;
+    lon = weather.coord.lon;
+    if (cityName) weather.name = cityName;
+    if (countryCode) weather.sys.country = countryCode;
 
+    // (3) Fetch Pollution
     setStep(2);
-    const [aqR,ctR]=await Promise.allSettled([fetchAirQuality(lat,lon),fetchCountry(weather.sys.country)]);
+    let aqR;
+    try { aqR = { status: 'fulfilled', value: await fetchAirQuality(lat, lon) }; }
+    catch(e) { aqR = { status: 'rejected' }; }
 
+    // (4) Fetch Country Info
     setStep(3);
-    /* small pause so step 3 is visible */
-    await new Promise(r=>setTimeout(r,200));
+    let ctR;
+    try { ctR = { status: 'fulfilled', value: await fetchCountry(weather.sys.country) }; }
+    catch(e) { ctR = { status: 'rejected' }; }
 
     setStep(4);
-    const forecast=await fetchForecast({lat,lon});
+    const forecast = await fetchForecast({lat, lon});
 
     /* Compute AQI */
     const readings=aqR.status==='fulfilled'?(aqR.value??{}):{};
@@ -615,20 +647,197 @@ async function analyzeCity(query) {
 }
 
 /* ──────────────────────────────────────────────────────────
+   SEARCH AUTOCOMPLETE
+   ────────────────────────────────────────────────────────── */
+let debounceTimer;
+let currentFocus = -1;
+
+function closeSuggestions() {
+  const list = $('suggestionsList');
+  if (list) {
+    list.classList.add('hidden');
+    list.innerHTML = '';
+  }
+  currentFocus = -1;
+}
+
+function displaySuggestions(suggestions) {
+  const list = $('suggestionsList');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!suggestions || suggestions.length === 0) {
+    list.classList.add('hidden');
+    return;
+  }
+  
+  // Filter unique cities to prevent identical suggestions
+  const unique = [];
+  const seen = new Set();
+  suggestions.forEach(item => {
+    const key = `${item.name}-${item.state}-${item.country}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(item);
+    }
+  });
+
+  unique.forEach((item) => {
+    const li = document.createElement('li');
+    li.className = 'suggestion-item ripple-host';
+    li.setAttribute('role', 'option');
+    
+    // Convert 2-letter country code to flag emoji
+    const getFlagEmoji = (code) => {
+      if (!code) return '';
+      return code.toUpperCase().replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
+    };
+
+    const stateStr = item.state ? `${item.state}, ` : '';
+    const flag = getFlagEmoji(item.country);
+    
+    li.innerHTML = `
+      <span class="suggestion-city">${item.name}</span>
+      <span class="suggestion-meta">${stateStr}${flag}</span>
+    `;
+    
+    li.addEventListener('click', () => {
+      $('cityInput').value = item.name;
+      closeSuggestions();
+      analyzeCity({ lat: item.lat, lon: item.lon, name: item.name, country: item.country });
+    });
+    
+    list.appendChild(li);
+  });
+  
+  list.classList.remove('hidden');
+}
+
+async function fetchSuggestions(query) {
+  if (query.length < 3) {
+    closeSuggestions();
+    return;
+  }
+  try {
+    const data = await fetchJSON(`https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(query)}&limit=5&appid=${CONFIG.OWM_KEY}`);
+    displaySuggestions(data);
+  } catch (err) {
+    console.error('Failed to fetch suggestions', err);
+  }
+}
+
+$('cityInput')?.addEventListener('input', e => {
+  const val = e.target.value.trim();
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => fetchSuggestions(val), 300);
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-input-wrapper')) {
+    closeSuggestions();
+  }
+});
+
+/* ──────────────────────────────────────────────────────────
    EVENT LISTENERS: SEARCH FORM
    ────────────────────────────────────────────────────────── */
 $('searchForm')?.addEventListener('submit',e=>{
   e.preventDefault();
   const city=$('cityInput').value.trim();
   if(city) analyzeCity(city);
+  closeSuggestions();
 });
-$('cityInput')?.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){e.preventDefault();const city=$('cityInput').value.trim();if(city)analyzeCity(city);}
+
+$('cityInput')?.addEventListener('keydown', e => {
+  const list = $('suggestionsList');
+  let items = list && !list.classList.contains('hidden') ? list.querySelectorAll('.suggestion-item') : [];
+  
+  if (e.key === 'ArrowDown' && items.length > 0) {
+    e.preventDefault();
+    currentFocus++;
+    setActive(items);
+  } else if (e.key === 'ArrowUp' && items.length > 0) {
+    e.preventDefault();
+    currentFocus--;
+    setActive(items);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (currentFocus > -1 && items.length > 0) {
+      items[currentFocus].click();
+    } else {
+      const city = $('cityInput').value.trim();
+      if (city) analyzeCity(city);
+      closeSuggestions();
+    }
+  } else if (e.key === 'Escape') {
+    closeSuggestions();
+  }
+
+  function setActive(items) {
+    if (!items || items.length === 0) return;
+    items.forEach(item => item.classList.remove('active'));
+    if (currentFocus >= items.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = items.length - 1;
+    items[currentFocus].classList.add('active');
+    items[currentFocus].scrollIntoView({ block: 'nearest' });
+  }
 });
 
 /* ──────────────────────────────────────────────────────────
    INIT
    ────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────
+   FLOATING GLOBE INITIALIZATION
+   ────────────────────────────────────────────────────────── */
+let myGlobe;
+function initGlobe() {
+  const container = $('globeContainer');
+  if (!container) return;
+
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+
+  myGlobe = Globe({ animateIn: true })
+    ($('globeViz'))
+    .width(w)
+    .height(h)
+    .backgroundColor('rgba(0,0,0,0)')
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+    .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+    .showAtmosphere(true)
+    .atmosphereColor('#00e5ff')
+    .atmosphereAltitude(0.2)
+    .ringsData([])
+    .ringColor(() => '#00e5ff')
+    .ringMaxRadius('maxR')
+    .ringPropagationSpeed('propagationSpeed')
+    .ringRepeatPeriod('repeatPeriod')
+    .onGlobeClick(async ({ lat, lng }) => {
+      // Visual feedback: Rippling Ring
+      myGlobe.ringsData([{ lat, lng, maxR: 8, propagationSpeed: 2, repeatPeriod: 600 }]);
+      setTimeout(() => myGlobe.ringsData([]), 2000);
+
+      $('globeLoader').classList.remove('hidden');
+      await analyzeCity({ lat, lon: lng });
+      $('globeLoader').classList.add('hidden');
+    });
+
+  // Make oceans semi-transparent by setting material opacity
+  const mat = myGlobe.globeMaterial();
+  if (mat) {
+    mat.transparent = true;
+    mat.opacity = 0.85;
+  }
+
+  myGlobe.controls().autoRotate = true;
+  myGlobe.controls().autoRotateSpeed = 1.0;
+  myGlobe.controls().enableZoom = false;
+
+  window.addEventListener('resize', () => {
+    myGlobe.width(container.clientWidth);
+    myGlobe.height(container.clientHeight);
+  });
+}
+
 window.addEventListener('DOMContentLoaded',()=>{
   setupRipples();
   setupUnitToggle();
@@ -637,6 +846,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   setupCopyBtn();
   setupNavBtns();
   renderRecent();
+  initGlobe();
   $('cityInput')?.focus();
 
   /* Auto-load last searched city */

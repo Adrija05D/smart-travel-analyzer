@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Smart Travel, Weather &amp; Pollution Analyzer</title>
-  <meta name="description" content="Analyze real-time weather, air quality, and travel safety for any city worldwide." />
+  <meta name="description"
+    content="Analyze real-time weather, air quality, and travel safety for any city worldwide." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
   <!-- ░░ SHARED BACKGROUND ░░ -->
@@ -46,29 +51,32 @@
           and an intelligent travel safety verdict.
         </p>
         <div class="unit-toggle" role="group" aria-label="Temperature unit">
-          <button id="btnCelsius"    class="unit-btn active" aria-pressed="true">°C</button>
-          <button id="btnFahrenheit" class="unit-btn"        aria-pressed="false">°F</button>
+          <button id="btnCelsius" class="unit-btn active" aria-pressed="true">°C</button>
+          <button id="btnFahrenheit" class="unit-btn" aria-pressed="false">°F</button>
         </div>
       </header>
 
       <section class="search-section" aria-label="City Search">
         <form class="search-form" id="searchForm" autocomplete="off" novalidate>
-          <div class="search-input-wrapper">
+          <div class="search-input-wrapper" id="search-container">
             <span class="search-icon" aria-hidden="true">
               <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
               </svg>
             </span>
             <input id="cityInput" type="text" name="city" class="search-input"
-              placeholder="Search city — Tokyo, Paris, Mumbai, New York…"
-              aria-label="City name" autocomplete="off" required />
+              placeholder="Search city — Tokyo, Paris, Mumbai, New York…" aria-label="City name" autocomplete="off"
+              required />
             <span class="search-shortcut" aria-hidden="true">↵</span>
+            <ul id="suggestionsList" class="suggestions-list hidden" role="listbox"></ul>
           </div>
           <button type="button" id="geoBtn" class="geo-btn" title="Use my location">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-              <circle cx="12" cy="12" r="8" stroke-dasharray="3 3"/>
-            </svg>
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              <circle cx="12" cy="12" r="8" stroke-dasharray="3 3" />
+            </svg>s
           </button>
           <button type="submit" id="searchBtn" class="search-btn">
             <span class="btn-icon">✈</span><span class="btn-text">Analyze</span>
@@ -128,14 +136,15 @@
     <div class="results-topbar">
       <button class="topbar-back ripple-host" id="backBtn" aria-label="Back to search">
         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-          <path d="M19 12H5M12 5l-7 7 7 7"/>
+          <path d="M19 12H5M12 5l-7 7 7 7" />
         </svg>
         <span>Back</span>
       </button>
       <div class="topbar-city" id="topbarCity">—</div>
       <button class="topbar-new ripple-host" id="newSearchBtn" aria-label="New search">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
         </svg>
         New Search
       </button>
@@ -189,7 +198,8 @@
             <div class="city-meta-row">
               <div class="city-time-pill">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 6v6l4 2" />
                 </svg>
                 <span id="cityTimeText">—</span>
               </div>
@@ -205,15 +215,19 @@
             <div class="country-top">
               <div class="country-flag" id="countryFlag">🌐</div>
               <div>
-                <div class="country-name"   id="countryName">—</div>
+                <div class="country-name" id="countryName">—</div>
                 <div class="country-region" id="countryRegion">—</div>
               </div>
             </div>
             <div class="country-stats">
-              <div class="cstat"><span class="cstat-label">Capital</span>    <span class="cstat-val" id="countryCapital">—</span></div>
-              <div class="cstat"><span class="cstat-label">Population</span> <span class="cstat-val" id="countryPop">—</span></div>
-              <div class="cstat"><span class="cstat-label">Currency</span>   <span class="cstat-val" id="countryCurr">—</span></div>
-              <div class="cstat"><span class="cstat-label">Language</span>   <span class="cstat-val" id="countryLang">—</span></div>
+              <div class="cstat"><span class="cstat-label">Capital</span> <span class="cstat-val"
+                  id="countryCapital">—</span></div>
+              <div class="cstat"><span class="cstat-label">Population</span> <span class="cstat-val"
+                  id="countryPop">—</span></div>
+              <div class="cstat"><span class="cstat-label">Currency</span> <span class="cstat-val"
+                  id="countryCurr">—</span></div>
+              <div class="cstat"><span class="cstat-label">Language</span> <span class="cstat-val"
+                  id="countryLang">—</span></div>
             </div>
           </article>
         </div>
@@ -224,12 +238,12 @@
             <div class="card-tag">🌡 Temperature</div>
             <div class="weather-icon-lg" id="weatherIcon">🌡️</div>
             <div class="stat-block">
-              <span class="stat-num"  id="tempVal">—</span>
+              <span class="stat-num" id="tempVal">—</span>
               <span class="stat-unit" id="tempUnit">°C</span>
             </div>
-            <div class="stat-sub"  id="feelsLike">Feels like —</div>
+            <div class="stat-sub" id="feelsLike">Feels like —</div>
             <div class="temp-range">
-              <span class="range-low"  id="tempMin">↓ —</span>
+              <span class="range-low" id="tempMin">↓ —</span>
               <span class="range-high" id="tempMax">↑ —</span>
             </div>
             <div class="stat-badge" id="weatherCondition">—</div>
@@ -239,7 +253,7 @@
             <div class="card-tag">💧 Humidity</div>
             <div class="weather-icon-lg">💧</div>
             <div class="stat-block">
-              <span class="stat-num"  id="humidVal">—</span>
+              <span class="stat-num" id="humidVal">—</span>
               <span class="stat-unit">%</span>
             </div>
             <div class="stat-sub" id="humidDesc">—</div>
@@ -254,7 +268,7 @@
             <div class="card-tag">💨 Wind &amp; Pressure</div>
             <div class="weather-icon-lg">💨</div>
             <div class="stat-block">
-              <span class="stat-num"  id="windVal">—</span>
+              <span class="stat-num" id="windVal">—</span>
               <span class="stat-unit"> m/s</span>
             </div>
             <div class="stat-sub" id="windDir">Direction: —</div>
@@ -270,9 +284,9 @@
             <div class="aqi-layout">
               <div class="aqi-gauge">
                 <svg class="gauge-svg" viewBox="0 0 120 120" aria-hidden="true">
-                  <circle class="gauge-track" cx="60" cy="60" r="50"/>
-                  <circle class="gauge-fill" id="gaugeFill" cx="60" cy="60" r="50"
-                    stroke-dasharray="314" stroke-dashoffset="314"/>
+                  <circle class="gauge-track" cx="60" cy="60" r="50" />
+                  <circle class="gauge-fill" id="gaugeFill" cx="60" cy="60" r="50" stroke-dasharray="314"
+                    stroke-dashoffset="314" />
                 </svg>
                 <div class="gauge-center">
                   <span class="gauge-num" id="aqiNum">—</span>
@@ -281,7 +295,7 @@
               </div>
               <div class="aqi-info">
                 <div class="aqi-status" id="aqiStatus">—</div>
-                <div class="aqi-desc"   id="aqiDesc">Waiting…</div>
+                <div class="aqi-desc" id="aqiDesc">Waiting…</div>
                 <div class="aqi-scale">
                   <div class="scale-bar">
                     <div class="scale-fill" id="aqiScaleFill" style="width:100%"></div>
@@ -298,28 +312,48 @@
             <div class="card-tag">🧪 Pollutant Breakdown</div>
             <div class="pollutants-grid">
               <div class="pollutant ripple-host">
-                <div class="pol-header"><span class="pol-label">PM<sub>2.5</sub></span><span class="pol-badge" id="pm25Badge">—</span></div>
+                <div class="pol-header"><span class="pol-label">PM<sub>2.5</sub></span><span class="pol-badge"
+                    id="pm25Badge">—</span></div>
                 <div class="pol-value" id="pm25Val">—</div>
                 <div class="pol-unit">μg/m³</div>
-                <div class="pol-meter"><div class="pol-meter-track"><div class="pol-meter-fill" id="pm25Bar"></div></div><span class="pol-meter-max">150</span></div>
+                <div class="pol-meter">
+                  <div class="pol-meter-track">
+                    <div class="pol-meter-fill" id="pm25Bar"></div>
+                  </div><span class="pol-meter-max">150</span>
+                </div>
               </div>
               <div class="pollutant ripple-host">
-                <div class="pol-header"><span class="pol-label">PM<sub>10</sub></span><span class="pol-badge" id="pm10Badge">—</span></div>
+                <div class="pol-header"><span class="pol-label">PM<sub>10</sub></span><span class="pol-badge"
+                    id="pm10Badge">—</span></div>
                 <div class="pol-value" id="pm10Val">—</div>
                 <div class="pol-unit">μg/m³</div>
-                <div class="pol-meter"><div class="pol-meter-track"><div class="pol-meter-fill" id="pm10Bar"></div></div><span class="pol-meter-max">250</span></div>
+                <div class="pol-meter">
+                  <div class="pol-meter-track">
+                    <div class="pol-meter-fill" id="pm10Bar"></div>
+                  </div><span class="pol-meter-max">250</span>
+                </div>
               </div>
               <div class="pollutant ripple-host">
-                <div class="pol-header"><span class="pol-label">NO<sub>2</sub></span><span class="pol-badge" id="no2Badge">—</span></div>
+                <div class="pol-header"><span class="pol-label">NO<sub>2</sub></span><span class="pol-badge"
+                    id="no2Badge">—</span></div>
                 <div class="pol-value" id="no2Val">—</div>
                 <div class="pol-unit">μg/m³</div>
-                <div class="pol-meter"><div class="pol-meter-track"><div class="pol-meter-fill" id="no2Bar"></div></div><span class="pol-meter-max">200</span></div>
+                <div class="pol-meter">
+                  <div class="pol-meter-track">
+                    <div class="pol-meter-fill" id="no2Bar"></div>
+                  </div><span class="pol-meter-max">200</span>
+                </div>
               </div>
               <div class="pollutant ripple-host">
-                <div class="pol-header"><span class="pol-label">O<sub>3</sub></span><span class="pol-badge" id="o3Badge">—</span></div>
+                <div class="pol-header"><span class="pol-label">O<sub>3</sub></span><span class="pol-badge"
+                    id="o3Badge">—</span></div>
                 <div class="pol-value" id="o3Val">—</div>
                 <div class="pol-unit">μg/m³</div>
-                <div class="pol-meter"><div class="pol-meter-track"><div class="pol-meter-fill" id="o3Bar"></div></div><span class="pol-meter-max">180</span></div>
+                <div class="pol-meter">
+                  <div class="pol-meter-track">
+                    <div class="pol-meter-fill" id="o3Bar"></div>
+                  </div><span class="pol-meter-max">180</span>
+                </div>
               </div>
             </div>
           </article>
@@ -345,15 +379,18 @@
             <div class="verdict-actions">
               <button class="share-btn ripple-host" id="shareBtn" title="Share">
                 <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                 </svg>
                 <span id="shareLabel">Share</span>
               </button>
               <button class="copy-btn ripple-host" id="copyBtn" title="Copy details">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  <rect x="9" y="9" width="13" height="13" rx="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
                 <span id="copyLabel">Copy</span>
               </button>
@@ -379,8 +416,8 @@
         <footer class="site-footer">
           <p>Powered by
             <a href="https://openweathermap.org" target="_blank" rel="noopener">OpenWeatherMap</a> ·
-            <a href="https://openaq.org"         target="_blank" rel="noopener">OpenAQ v3</a> ·
-            <a href="https://restcountries.com"  target="_blank" rel="noopener">REST Countries</a>
+            <a href="https://openaq.org" target="_blank" rel="noopener">OpenAQ v3</a> ·
+            <a href="https://restcountries.com" target="_blank" rel="noopener">REST Countries</a>
           </p>
           <p class="footer-sub">All data is real-time and indicative only · Smart Travel Analyzer © 2026</p>
         </footer>
@@ -389,6 +426,14 @@
     </div><!-- /results-scroll -->
   </div><!-- /#pageResults -->
 
+  <!-- ░░ FLOATING GLOBE ░░ -->
+  <div id="globeContainer" class="globe-container" aria-hidden="true">
+    <div id="globeViz"></div>
+    <div id="globeLoader" class="globe-loader hidden">Scanning...</div>
+  </div>
+
+  <script src="https://unpkg.com/globe.gl"></script>
   <script src="script.js"></script>
 </body>
+
 </html>
