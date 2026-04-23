@@ -639,6 +639,12 @@ async function analyzeCity(query) {
 
     addRecent(weather.name);
 
+    if (myGlobe) {
+      myGlobe.pointOfView({ lat, lng: lon, altitude: 2 }, 2000);
+      myGlobe.ringsData([{ lat, lng: lon, maxR: 12, propagationSpeed: 2, repeatPeriod: 1000 }]);
+      myGlobe.pathsData([{ coords: [[lat, lon, 0], [lat, lon, 0.5]] }]);
+    }
+
   } catch(err) {
     $('loadingSpinner')?.classList.remove('visible');
     showError(err.message??'Unexpected error. Please try again.');
@@ -695,8 +701,20 @@ function displaySuggestions(suggestions) {
     const stateStr = item.state ? `${item.state}, ` : '';
     const flag = getFlagEmoji(item.country);
     
+    // Highlight matching part of the city name
+    const queryLower = $('cityInput').value.toLowerCase();
+    const cityLower = item.name.toLowerCase();
+    const matchIndex = cityLower.indexOf(queryLower);
+    
+    let highlightedName = item.name;
+    if (matchIndex >= 0) {
+      highlightedName = item.name.substring(0, matchIndex) + 
+                        `<strong style="color: var(--neon-cyan);">${item.name.substring(matchIndex, matchIndex + queryLower.length)}</strong>` + 
+                        item.name.substring(matchIndex + queryLower.length);
+    }
+    
     li.innerHTML = `
-      <span class="suggestion-city">${item.name}</span>
+      <span class="suggestion-city">${highlightedName}</span>
       <span class="suggestion-meta">${stateStr}${flag}</span>
     `;
     
@@ -713,7 +731,7 @@ function displaySuggestions(suggestions) {
 }
 
 async function fetchSuggestions(query) {
-  if (query.length < 3) {
+  if (query.length < 2) {
     closeSuggestions();
     return;
   }
@@ -801,36 +819,61 @@ function initGlobe() {
     .width(w)
     .height(h)
     .backgroundColor('rgba(0,0,0,0)')
-    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+    .globeImageUrl('//cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg')
     .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
     .showAtmosphere(true)
-    .atmosphereColor('#00e5ff')
+    .atmosphereColor('#ff007f')
     .atmosphereAltitude(0.2)
     .ringsData([])
-    .ringColor(() => '#00e5ff')
+    .ringColor(() => '#ff007f')
     .ringMaxRadius('maxR')
     .ringPropagationSpeed('propagationSpeed')
     .ringRepeatPeriod('repeatPeriod')
+    .pathsData([])
+    .pathColor(() => '#ff007f')
+    .pathStroke(2)
+    .pathDashLength(0.01)
+    .pathDashGap(0.005)
+    .pathDashAnimateTime(1000)
     .onGlobeClick(async ({ lat, lng }) => {
-      // Visual feedback: Rippling Ring
-      myGlobe.ringsData([{ lat, lng, maxR: 8, propagationSpeed: 2, repeatPeriod: 600 }]);
-      setTimeout(() => myGlobe.ringsData([]), 2000);
+      myGlobe.pointOfView({ lat, lng, altitude: 2 }, 2000);
+      myGlobe.ringsData([{ lat, lng, maxR: 12, propagationSpeed: 2, repeatPeriod: 1000 }]);
+      myGlobe.pathsData([{ coords: [[lat, lng, 0], [lat, lng, 0.5]] }]);
 
       $('globeLoader').classList.remove('hidden');
       await analyzeCity({ lat, lon: lng });
       $('globeLoader').classList.add('hidden');
     });
 
+  // Fetch GeoJSON for hex bin digital matrix & hover
+  fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
+    .then(res => res.json())
+    .then(countries => {
+      myGlobe.hexPolygonsData(countries.features)
+        .hexPolygonResolution(3)
+        .hexPolygonMargin(0.7)
+        .hexPolygonColor(() => 'rgba(255, 0, 127, 0.3)')
+        .hexPolygonLabel(({ properties: d }) => `
+          <div style="background: rgba(8,15,30,0.85); backdrop-filter: blur(12px); border: 1px solid #ff007f; padding: 6px 12px; border-radius: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 600; color: #ffffff; box-shadow: 0 0 14px rgba(255,0,127,0.5);">
+            ${d.ADMIN}
+          </div>
+        `)
+        .onHexPolygonHover(hoverD => myGlobe
+           .hexPolygonColor(d => d === hoverD ? 'rgba(255, 0, 127, 0.9)' : 'rgba(255, 0, 127, 0.3)')
+        );
+    })
+    .catch(err => console.error("Could not load country polygons", err));
+
   // Make oceans semi-transparent by setting material opacity
   const mat = myGlobe.globeMaterial();
   if (mat) {
     mat.transparent = true;
-    mat.opacity = 0.85;
+    mat.opacity = 0.95;
   }
 
   myGlobe.controls().autoRotate = true;
-  myGlobe.controls().autoRotateSpeed = 1.0;
-  myGlobe.controls().enableZoom = false;
+  myGlobe.controls().autoRotateSpeed = 0.5;
+  myGlobe.controls().enableZoom = true;
 
   window.addEventListener('resize', () => {
     myGlobe.width(container.clientWidth);
