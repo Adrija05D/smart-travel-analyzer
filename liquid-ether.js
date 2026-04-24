@@ -815,6 +815,11 @@
         this.resizeRafRef = requestAnimationFrame(() => this.resize());
       });
       this.ro.observe(this.props.$wrapper);
+
+      // Start the simulation loop
+      if (!document.hidden) {
+        this.start();
+      }
     }
     
     init() { 
