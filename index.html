@@ -19,10 +19,7 @@
 
   <!-- ░░ SHARED BACKGROUND ░░ -->
   <div class="bg-mesh" aria-hidden="true">
-    <div class="mesh-orb orb-1"></div>
-    <div class="mesh-orb orb-2"></div>
-    <div class="mesh-orb orb-3"></div>
-    <div class="mesh-orb orb-4"></div>
+    <div id="liquidEtherBg" style="position:absolute; inset:0; z-index:-1;"></div>
     <div class="scanlines"></div>
     <div class="grid-lines"></div>
   </div>
@@ -59,31 +56,59 @@
       </header>
 
       <section class="search-section" aria-label="City Search">
-        <form class="search-form" id="searchForm" autocomplete="off" novalidate>
-          <div class="search-input-wrapper" id="search-container">
-            <span class="search-icon" aria-hidden="true">
+        <form class="search-form" id="searchForm" autocomplete="off" novalidate style="flex-direction: column;">
+          <div style="display: flex; gap: 10px; width: 100%;">
+            <div class="search-input-wrapper" id="search-container">
+              <span class="search-icon" aria-hidden="true">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+              </span>
+              <input id="cityInput" type="text" name="city" class="search-input"
+                placeholder="Search city — Tokyo, Paris, Mumbai, New York…" aria-label="City name" autocomplete="off"
+                required />
+              <span class="search-shortcut" aria-hidden="true">↵</span>
+              <ul id="suggestionsList" class="suggestions-list hidden" role="listbox"></ul>
+            </div>
+            <button type="button" id="geoBtn" class="geo-btn" title="Use my location">
               <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                <circle cx="12" cy="12" r="8" stroke-dasharray="3 3" />
               </svg>
-            </span>
-            <input id="cityInput" type="text" name="city" class="search-input"
-              placeholder="Search city — Tokyo, Paris, Mumbai, New York…" aria-label="City name" autocomplete="off"
-              required />
-            <span class="search-shortcut" aria-hidden="true">↵</span>
-            <ul id="suggestionsList" class="suggestions-list hidden" role="listbox"></ul>
+            </button>
+            <button type="submit" id="searchBtn" class="search-btn">
+              <span class="btn-icon">✈</span><span class="btn-text">Analyze</span>
+              <span class="btn-glow"></span>
+            </button>
           </div>
-          <button type="button" id="geoBtn" class="geo-btn" title="Use my location">
-            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-              <circle cx="12" cy="12" r="8" stroke-dasharray="3 3" />
-            </svg>s
-          </button>
-          <button type="submit" id="searchBtn" class="search-btn">
-            <span class="btn-icon">✈</span><span class="btn-text">Analyze</span>
-            <span class="btn-glow"></span>
-          </button>
+          <div class="advanced-filters">
+            <select id="travelDays" class="filter-select" aria-label="Duration">
+              <option value="1">1 Day</option>
+              <option value="3" selected>3 Days</option>
+              <option value="5">5 Days</option>
+              <option value="7">1 Week</option>
+            </select>
+            <select id="travelBudget" class="filter-select" aria-label="Budget">
+              <option value="economy">Economy</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="luxury">Luxury</option>
+            </select>
+            <select id="travelType" class="filter-select" aria-label="Travel Type">
+              <option value="solo">Solo</option>
+              <option value="couple">Couple</option>
+              <option value="family" selected>Family</option>
+              <option value="friends">Friends</option>
+            </select>
+            <select id="travelInterest" class="filter-select" aria-label="Interests">
+              <option value="culture" selected>Culture</option>
+              <option value="nature">Nature</option>
+              <option value="food">Food</option>
+              <option value="relax">Relax</option>
+              <option value="adventure">Adventure</option>
+            </select>
+          </div>
         </form>
 
         <div class="recent-searches" id="recentSearches">
@@ -143,13 +168,21 @@
         <span>Back</span>
       </button>
       <div class="topbar-city" id="topbarCity">—</div>
-      <button class="topbar-new ripple-host" id="newSearchBtn" aria-label="New search">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="8" />
-          <path d="m21 21-4.35-4.35" />
-        </svg>
-        New Search
-      </button>
+      <div class="topbar-actions">
+        <button class="topbar-new ripple-host" id="downloadPdfBtn" aria-label="Download PDF">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Save PDF
+        </button>
+        <button class="topbar-new ripple-host" id="newSearchBtn" aria-label="New search">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+          New Search
+        </button>
+      </div>
     </div>
 
     <!-- Scrollable area -->
@@ -414,6 +447,27 @@
           </div>
         </article>
 
+        <!-- ROW 6: AI Itinerary & Insights -->
+        <div class="grid-row row-top" style="margin-top: var(--gap);">
+          <article class="card card-insights ripple-host" style="--delay:.50s">
+            <div class="card-tag">💡 Destination Insights & Cost</div>
+            <div class="insights-content" id="insightsContent">
+               <p class="txt-muted">Analyzing city profile...</p>
+            </div>
+            <div class="budget-content">
+               <h4 class="verdict-col-title" style="margin-top:16px;">💳 Estimated Budget</h4>
+               <div class="budget-est" id="budgetContent">—</div>
+            </div>
+          </article>
+
+          <article class="card card-itinerary ripple-host" style="--delay:.55s">
+            <div class="card-tag">🗺️ Smart Itinerary & Tips</div>
+            <div class="itinerary-content" id="itineraryContent">
+               <p class="txt-muted">Generating personalized itinerary...</p>
+            </div>
+          </article>
+        </div>
+
         <!-- Footer inside results -->
         <footer class="site-footer">
           <p>Powered by
@@ -435,6 +489,9 @@
   </div>
 
   <script src="https://unpkg.com/globe.gl"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="liquid-ether.js"></script>
   <script src="script.js"></script>
 </body>
 

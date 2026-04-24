@@ -636,6 +636,7 @@ async function analyzeCity(query) {
     renderAQI(aqi,readings);
     renderForecast(forecast);
     renderVerdict(buildVerdict(aqi,weather.main.temp,weather.weather[0]?.description));
+    renderInsightsAndItinerary(weather, ctR.status==='fulfilled'?ctR.value:null);
 
     addRecent(weather.name);
 
@@ -801,6 +802,137 @@ $('cityInput')?.addEventListener('keydown', e => {
 });
 
 /* ──────────────────────────────────────────────────────────
+   AI ITINERARY & INSIGHTS (Mock Generator)
+   ────────────────────────────────────────────────────────── */
+async function renderInsightsAndItinerary(weather, countryData) {
+  const city = weather.name;
+  const country = countryData ? (countryData.name?.common ?? weather.sys.country) : weather.sys.country;
+  
+  // Get filter values
+  const days = parseInt($('travelDays')?.value || '3');
+  const budget = $('travelBudget')?.value || 'moderate';
+  const type = $('travelType')?.value || 'family';
+  const interest = $('travelInterest')?.value || 'culture';
+  
+  // 0. Fetch City Image
+  let cityImageUrl = '';
+  try {
+    const wikiRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(city)}`);
+    if (wikiRes.ok) {
+      const wikiData = await wikiRes.json();
+      if (wikiData.originalimage && wikiData.originalimage.source) {
+        cityImageUrl = wikiData.originalimage.source;
+      } else if (wikiData.thumbnail && wikiData.thumbnail.source) {
+        cityImageUrl = wikiData.thumbnail.source;
+      }
+    }
+  } catch(e) {
+    console.log("Wiki image fetch failed", e);
+  }
+  
+  const imageHtml = cityImageUrl ? `<img src="${cityImageUrl}" alt="${city}" class="city-image" style="width:100%; height:200px; object-fit:cover; border-radius: var(--radius-sm); margin-bottom: 16px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0,0,0,0.4);">` : '';
+  
+  // 1. Render Insights
+  const currency = countryData?.currencies ? Object.keys(countryData.currencies)[0] : 'USD';
+  let dailyCost = 100;
+  if (budget === 'economy') dailyCost = 45;
+  else if (budget === 'luxury') dailyCost = 350;
+  
+  if (['CH', 'NO', 'IS', 'DK', 'US', 'GB', 'SG', 'AE', 'JP'].includes(weather.sys.country)) dailyCost *= 1.8; 
+  else if (['IN', 'VN', 'TH', 'ID', 'PH', 'EG', 'PK', 'NP'].includes(weather.sys.country)) dailyCost *= 0.35; 
+  
+  const multipliers = { 'solo': 1, 'couple': 1.8, 'friends': 2.5, 'family': 3.2 };
+  const totalCost = Math.round(dailyCost * days * (multipliers[type] || 1));
+  
+  const insightsHtml = `
+    ${imageHtml}
+    <p class="insight-p"><strong>${city}</strong> is a vibrant destination in ${country}. Tailored for a <strong>${type}</strong> trip focused on <strong>${interest}</strong>, it offers an incredible mix of local traditions and modern amenities.</p>
+    <p class="insight-p">The best time to visit is generally during the shoulder seasons (Spring/Autumn). Given the current conditions ("${capit(weather.weather[0]?.description)}"), public transport is your best bet for getting around. English is ${['US','GB','AU','NZ','CA','IN'].includes(weather.sys.country) ? 'widely spoken' : 'understood in main tourist areas'}.</p>
+  `;
+  setHtml('insightsContent', insightsHtml);
+  
+  let currSymbol = '$';
+  if(currency==='EUR') currSymbol='€'; else if(currency==='GBP') currSymbol='£'; else if(currency==='INR') currSymbol='₹'; else if(currency==='JPY') currSymbol='¥';
+  
+  setText('budgetContent', `${currSymbol}${totalCost.toLocaleString()}`);
+  
+  // 2. Render Itinerary
+  let itineraryHtml = '';
+  
+  const activities = {
+    culture: ['Visit the main historical museum', 'Explore the old town district', 'Attend a local traditional performance', 'Tour the central cathedral/temple', 'Discover ancient ruins or heritage sites'],
+    nature: ['Hike in the nearby national park', 'Visit the botanical gardens', 'Take a scenic boat ride', 'Explore local wildlife reserves', 'Enjoy a sunset view from the highest hill'],
+    food: ['Take a street food tasting tour', 'Dine at a top-rated local restaurant', 'Visit the bustling central market', 'Attend a cooking class', 'Enjoy a craft brewery or winery tasting'],
+    relax: ['Spend the day at a premium spa', 'Lounge at a scenic cafe or beach', 'Take a leisurely stroll in the main park', 'Enjoy a sunset cruise', 'Book a private cabana or wellness retreat'],
+    adventure: ['Go zip-lining or rock climbing', 'Rent an ATV or mountain bike', 'Take a surfing or kayaking lesson', 'Go paragliding over the valley', 'Join a wilderness survival trek']
+  };
+  
+  const foodStrs = ['Grab a coffee at a local cafe', 'Try the famous street food', 'Enjoy a traditional dinner', 'Visit a vibrant food market', 'Relax with drinks at a rooftop bar'];
+  
+  for(let i=1; i<=days; i++) {
+    const act1 = activities[interest][(i * 2) % activities[interest].length];
+    const act2 = activities[interest][(i * 3) % activities[interest].length];
+    const food = foodStrs[i % foodStrs.length];
+    
+    itineraryHtml += `
+      <div class="itinerary-day">
+        <div class="day-title"><span>Day ${i}</span></div>
+        <div class="day-desc">
+          <strong>Morning:</strong> ${act1}.<br>
+          <strong>Afternoon:</strong> ${act2}.<br>
+          <strong>Evening:</strong> ${food}.
+        </div>
+        <div class="day-tips">
+          <span class="day-tip-badge">🚶 Medium Pace</span>
+          <span class="day-tip-badge">📸 Photo Op</span>
+        </div>
+      </div>
+    `;
+  }
+  
+  setHtml('itineraryContent', itineraryHtml);
+}
+
+/* ──────────────────────────────────────────────────────────
+   PDF DOWNLOAD
+   ────────────────────────────────────────────────────────── */
+function setupPdfBtn() {
+  $('downloadPdfBtn')?.addEventListener('click', () => {
+    const element = $('pageResults');
+    const btn = $('downloadPdfBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'Saving...';
+    
+    const opt = {
+      margin:       [0.3, 0.3, 0.3, 0.3],
+      filename:     `Smart_Travel_${$('cityName')?.textContent || 'City'}.pdf`,
+      image:        { type: 'jpeg', quality: 0.95 },
+      html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#050505', windowWidth: 1200 },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    
+    const scroller = element.querySelector('.results-scroll');
+    const oldHeight = element.style.height;
+    const oldOverflow = element.style.overflow;
+    const scrollOldHeight = scroller ? scroller.style.height : '';
+    const scrollOldOverflow = scroller ? scroller.style.overflow : '';
+    
+    // Expand for PDF
+    element.style.height = 'auto';
+    element.style.overflow = 'visible';
+    if(scroller) { scroller.style.height = 'auto'; scroller.style.overflow = 'visible'; }
+    
+    html2pdf().set(opt).from(element).save().then(() => {
+      // Restore
+      element.style.height = oldHeight;
+      element.style.overflow = oldOverflow;
+      if(scroller) { scroller.style.height = scrollOldHeight; scroller.style.overflow = scrollOldOverflow; }
+      btn.innerHTML = originalText;
+    });
+  });
+}
+
+/* ──────────────────────────────────────────────────────────
    INIT
    ────────────────────────────────────────────────────────── */
 /* ──────────────────────────────────────────────────────────
@@ -881,15 +1013,30 @@ function initGlobe() {
   });
 }
 
+function initLiquidEtherBg() {
+  const container = $('liquidEtherBg');
+  if (!container || !window.LiquidEther) return;
+  new window.LiquidEther({
+    $wrapper: container,
+    autoDemo: true,
+    autoSpeed: 0.6,
+    autoIntensity: 2.5,
+    resolution: 0.6,
+    colors: ['#00e5ff', '#a855f7', '#7c3aed'] // matching the neon theme
+  });
+}
+
 window.addEventListener('DOMContentLoaded',()=>{
   setupRipples();
   setupUnitToggle();
   setupGeoBtn();
   setupShareBtn();
   setupCopyBtn();
+  setupPdfBtn();
   setupNavBtns();
   renderRecent();
   initGlobe();
+  initLiquidEtherBg();
   $('cityInput')?.focus();
 
   /* Auto-load last searched city */

@@ -576,3 +576,67 @@ body{
   color: var(--txt-muted);
 }
 
+/* ════════════════════════════════════════════════════════════
+   29. ADVANCED FILTERS & ITINERARY
+   ════════════════════════════════════════════════════════════ */
+.advanced-filters {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; width: 100%;
+}
+.filter-select {
+  flex: 1; min-width: 100px;
+  padding: 12px 34px 12px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--glass-blur);
+  border-radius: var(--radius-md);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.85rem; font-weight: 500;
+  color: var(--txt-primary); outline: none;
+  transition: border-color var(--dur), box-shadow var(--dur);
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+}
+.filter-select:focus {
+  border-color: var(--neon-cyan); box-shadow: var(--glow-cyan);
+}
+.filter-select option {
+  background: var(--clr-surface);
+  color: var(--txt-primary);
+}
+.topbar-actions {
+  display: flex; gap: 10px; margin-left: auto;
+}
+.card-insights, .card-itinerary {
+  border-top: 2px solid rgba(168, 85, 247, 0.45);
+}
+.itinerary-day {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.itinerary-day:last-child {
+  border-bottom: none; margin-bottom: 0; padding-bottom: 0;
+}
+.day-title {
+  font-weight: 700; color: var(--neon-cyan); margin-bottom: 8px; font-size: 1.05rem;
+  display: flex; align-items: center; gap: 8px;
+}
+.day-desc {
+  font-size: 0.9rem; color: var(--txt-secondary); line-height: 1.6;
+}
+.day-tips {
+  margin-top: 8px; font-size: 0.85rem; color: var(--txt-muted); display: flex; gap: 8px; flex-wrap: wrap;
+}
+.day-tip-badge {
+  background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; border: 1px solid var(--glass-border);
+}
+.budget-est {
+  font-size: 2.2rem; font-family: 'Syne', sans-serif; font-weight: 800; color: var(--neon-gold);
+  text-shadow: 0 0 14px rgba(255,214,10,0.3); margin-top: 4px;
+}
+.insight-p {
+  font-size: 0.92rem; color: var(--txt-secondary); line-height: 1.7; margin-bottom: 12px;
+}
